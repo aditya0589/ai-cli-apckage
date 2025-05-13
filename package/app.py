@@ -2,34 +2,49 @@ from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
-# Load environment variables (like GOOGLE_API_KEY)
-load_dotenv()
 
-# Create a Gemini Chat model
-model = ChatGoogleGenerativeAI(model="gemini-1.5-flash")  # 'gemini-pro' is the chat-capable model
+class GeminiChatBot:
+    def __init__(self, system_prompt="You are a helpful AI assistant."):
+        # Load environment variables (like GOOGLE_API_KEY)
+        load_dotenv()
+        
+        # Initialize the Gemini model
+        self.model = ChatGoogleGenerativeAI(model="gemini-pro")
+        
+        # Initialize chat history with a system message
+        self.chat_history = [SystemMessage(content=system_prompt)]
 
-chat_history = []  # Store conversation history
+    def take_input(self):
+        """Takes user input from the console."""
+        return input("You: ")
 
-# Initial system message (optional, sets behavior)
-system_message = SystemMessage(content="You are a helpful AI assistant.")
-chat_history.append(system_message)
+    def get_response(self, user_input):
+        """Sends user input to the model and gets AI response."""
+        self.chat_history.append(HumanMessage(content=user_input))  # Add user message
+        result = self.model.invoke(self.chat_history)               # Get AI response
+        response = result.content
+        self.chat_history.append(AIMessage(content=response))       # Add AI response
+        return response
 
-# Chat loop
-while True:
-    query = input("You: ")
-    if query.lower() == "exit":
-        break
+    def start_chat(self):
+        """Runs a loop for continuous chatting."""
+        print("Type 'exit' to end the chat.")
+        while True:
+            query = self.take_input()
+            if query.lower() == "exit":
+                break
+            response = self.get_response(query)
+            print(f"AI: {response}")
+        print("---- Chat Ended ----")
+        self.show_history()
 
-    chat_history.append(HumanMessage(content=query))  # User input
+    def show_history(self):
+        """Prints the chat history."""
+        for msg in self.chat_history:
+            print(f"{msg.type}: {msg.content}")
 
-    # Send entire history to Gemini
-    result = model.invoke(chat_history)
-    response = result.content
 
-    chat_history.append(AIMessage(content=response))  # AI response
-    print(f"AI: {response}")
-
-# Print full history
-print("---- Message History ----")
-for msg in chat_history:
-    print(f"{msg.type}: {msg.content}")
+# Usage
+if __name__ == "__main__":
+    chatbot = GeminiChatBot()
+    chatbot.start_chat()
